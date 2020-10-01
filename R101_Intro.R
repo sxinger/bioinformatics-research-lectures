@@ -1,0 +1,169 @@
+#### Basic Syntax ####
+
+#=====Variable Assignment=====
+x<-4
+y=2
+z<-x+y
+
+z
+print(z)
+
+x<-"a"
+y<-"b"
+z<-x+y # will get error
+z<-paste(x,y)
+z
+
+#=====Variable Comparison, Logicals=====
+x==y
+x!=y
+x>y
+x>=y
+x<=y
+
+
+#=====Math function=====
+x+y
+x-y
+x*y
+x/y
+x^2
+sqrt(x)
+log(x,2) 
+log(x) #default at natural log
+
+
+#=====R Data Types=====
+#---Numeric
+n<-15 # Double precision by default
+n
+typeof(n)
+
+n<-15L # Integer
+n
+typeof(n)
+
+#---Character / String
+c1 <- "c"
+c1
+typeof(c1)
+
+c2 <- "a string of text"
+c2
+typeof(c2)
+
+#---Logical
+l1<-TRUE
+l1<-T
+
+l2<-FALSE
+l2<-F
+
+#=====R Data Structure=====
+#---Vector
+v1 <- c(1, 2, 3, 4, 5)
+v1
+is.vector(v1)
+
+v1<-1:10
+v1
+
+v2 <- c("a", "b", "c")
+v2
+
+v2<-letters[1:12]
+v2
+
+v3 <- c(TRUE, TRUE, FALSE, FALSE, TRUE)
+v3
+
+
+#---Matrix
+m1 <- matrix(1:8,
+             nrow = 2,
+             byrow=T)
+m1
+is.matrix(m2)
+
+m2 <- matrix(1:8,
+             nrow = 2,
+             byrow=F)
+m2
+
+m2_row1<-m2[1,]
+m2_col1<-m2[,1]
+
+#---Data Frame
+df<-data.frame(vNumeric=c(1, 2, 3),
+               vCharacter=c("a", "b", "c"),
+               vLogical=c(T, F, T))
+df
+is.data.frame(df)
+
+df_row1<-df[1,]
+df_col1<-df[,1]
+
+df_col_vNumeric<-df[,"vNumeric"]
+df_col_vNumeric<-df$vNumeric
+
+
+#---List
+o1 <- c(1, 2, 3)
+o2 <- c("a", "b", "c", "d")
+o3 <- c(T, F, T, T, F)
+
+list1 <- list(o1=o1, o2=o2, o3=o3)
+list1
+
+list2 <- list(o1=o1, o2=o2, o3=o3, o4=list1)  # Lists within lists!
+list2
+
+list1_o1<-list1["o1"]
+
+
+#=====Data Import and Export=====
+#---load .csv file
+csv1<-read.csv("sample_csv_file.csv")
+
+#---save data as .csv file
+write.csv(csv1,file="save_as_csv.csv")
+
+#---save data as .rda(Rdata) file
+saveRDS(csv1,file="save_as_rda.rda")
+
+
+#=====R can send SQL to database and load data back into R=====
+#---You need to prepare things:
+# - 1. a database driver: 
+
+# - 2. a configuration file with your database/Oracle credentials
+config_file<-read.csv("config.csv",stringsAsFactors = F)
+  
+# - 3. RJDBC and DBI package
+p_load(DBI,RJDBC)
+# .rs.restartR() #--might need to run this line to restart R 
+
+drv<-RJDBC::JDBC(driverClass="oracle.jdbc.OracleDriver",
+                 classPath="/u02/PRVM868/ojdbc6.jar")
+url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database)
+conn <- RJDBC::dbConnect(drv=drv,
+                         url=url, 
+                         user=config_file$username, 
+                         password=config_file$password)
+summary(conn)
+
+idd_pat<-dbGetQuery(conn,"select * from PRVM_IDD_PATIENT_VIEW")
+
+
+#=====R can also speak like SQL=====
+p_load(sqldf)
+
+idd_ped<-sqldf("select * from idd_pat where age<18")
+idd_ped<-idd_pat[idd_pat$AGE<18,]
+
+
+
+
+
+
+
