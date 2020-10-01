@@ -7,16 +7,20 @@ install.packages("pacman")
 require(pacman)  # Gives a confirmation message.
 library(pacman)  # No message.
 
-# For multiple packages, you need to repeat step 1 and step 2 everytime.
+# For multiple packages, you need to repeat step 1 and step 2 for each package.
 
 # Alternatively, by using the p_load function from "pacman" package, 
 # you can install and load multiple packages in 1 step, such as:
-
-p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown)
+p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, sqldf)
 
 # or
+pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, sqldf) 
 
-pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown) 
+
+##### Get Help
+?p_load
+??p_load
+example("p_load")
 
 
 ##### Clear Packages ########
