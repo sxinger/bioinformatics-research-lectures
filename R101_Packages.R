@@ -1,28 +1,31 @@
-# LOAD PACKAGES ############################################
-
-# I recommend "pacman" for managing add-on packages. It will
-# install packages, if needed, and then load the packages.
+##### Load Packages ########
+# To install distributed packages in R using base packages, it usually takes two steps:
+# Step 1: install packages
 install.packages("pacman")
 
-# Then load the package by using either of the following:
+# Step 2: load packages - can use either of the followings:
 require(pacman)  # Gives a confirmation message.
 library(pacman)  # No message.
 
-# Or, by using "pacman::p_load" you can use the p_load
-# function from pacman without actually loading pacman.
-# These are packages I load every time.
+# For multiple packages, you need to repeat step 1 and step 2 everytime.
+
+# Alternatively, by using the p_load function from "pacman" package, 
+# you can install and load multiple packages in 1 step, such as:
+
+p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown)
+
+# or
+
 pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown) 
 
 
-# CLEAN UP #################################################
+##### Clear Packages ########
+# Similarly, you can clear packages using base function (one at a time):
+detach("package:pacman", unload = TRUE)
 
-# Clear packages
+# Or use the p_unload function in "pacman" package to clear multiple packages at once
 p_unload(dplyr, tidyr, stringr) # Clear specific packages
 p_unload(all)  # Easier: clears all add-ons
-detach("package:datasets", unload = TRUE)  # For base
 
-# Clear console
-cat("\014")  # ctrl+L
 
-# Clear mind :)
 
