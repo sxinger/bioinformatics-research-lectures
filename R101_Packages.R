@@ -11,7 +11,7 @@ library(pacman)  # No message.
 
 # Alternatively, by using the p_load function from "pacman" package, 
 # you can install and load multiple packages in 1 step, such as:
-p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, sqldf)
+p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, DBI, sqldf)
 
 # or
 pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, sqldf) 

@@ -152,7 +152,7 @@ conn <- RJDBC::dbConnect(drv=drv,
                          password=config_file$password)
 summary(conn)
 
-idd_pat<-dbGetQuery(conn,"select * from PRVM_IDD_PATIENT_VIEW")
+idd_pat<-dbGetQuery(conn,"select * from XSONG.PRVM_IDD_PATIENT_VIEW")
 
 
 #=====R can also speak like SQL=====
