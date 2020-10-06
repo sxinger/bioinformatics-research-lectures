@@ -32,6 +32,13 @@ sqrt(x)
 log(x,2) 
 log(x) #default at natural log
 
+#=====Logic function=====
+x<-TRUE
+y<-FALSE
+
+x&y
+x|y
+
 
 #=====R Data Types=====
 #---Numeric

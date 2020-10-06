@@ -14,7 +14,7 @@ library(pacman)  # No message.
 p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, DBI, sqldf)
 
 # or
-pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, sqldf) 
+pacman::p_load(pacman, dplyr, tidyr, stringr, ggplot2, rmarkdown, RJDBC, DBI, sqldf) 
 
 
 ##### Get Help
