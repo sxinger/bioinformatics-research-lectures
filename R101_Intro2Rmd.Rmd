@@ -76,6 +76,7 @@ conn <- RJDBC::dbConnect(drv=drv,
 ```
 
 And then use this connection `conn` within following sql chunks via the `connection` option: 
+
 ```{sql, connection=conn, output.var="IDD_PT"}
 select * from XSONG.PRVM_IDD_PATIENT_VIEW
 ```

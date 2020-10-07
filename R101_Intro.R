@@ -66,6 +66,7 @@ l1<-T
 l2<-FALSE
 l2<-F
 
+
 #=====R Data Structure=====
 #---Vector
 v1 <- c(1, 2, 3, 4, 5)
@@ -84,6 +85,8 @@ v2
 v3 <- c(TRUE, TRUE, FALSE, FALSE, TRUE)
 v3
 
+v4<-c("a",1,TRUE)
+v4
 
 #---Matrix
 m1 <- matrix(1:8,
@@ -100,15 +103,30 @@ m2
 m2_row1<-m2[1,]
 m2_col1<-m2[,1]
 
+
 #---Data Frame
 df<-data.frame(vNumeric=c(1, 2, 3),
                vCharacter=c("a", "b", "c"),
                vLogical=c(T, F, T))
 df
 is.data.frame(df)
+is.matrix(df)
+
 
 df_row1<-df[1,]
+
+#print first two rows
+df[1:2,]
+df[c(1,3),]
+
 df_col1<-df[,1]
+df[,2:3]
+
+df[1,3]
+df[,c(1,3)]
+
+m1[,c(2,4)]
+
 
 df_col_vNumeric<-df[,"vNumeric"]
 df_col_vNumeric<-df$vNumeric
@@ -119,10 +137,15 @@ o1 <- c(1, 2, 3)
 o2 <- c("a", "b", "c", "d")
 o3 <- c(T, F, T, T, F)
 
-list1 <- list(o1=o1, o2=o2, o3=o3)
+list1 <- list(o1=o1, 
+              o2=o2, 
+              o3=o3)
 list1
 
-list2 <- list(o1=o1, o2=o2, o3=o3, o4=list1)  # Lists within lists!
+list2 <- list(o1=o1,
+              o2=o2,
+              o3=o3, 
+              o4=list1)  # Lists within lists!
 list2
 
 list1_o1<-list1["o1"]
@@ -141,20 +164,22 @@ saveRDS(csv1,file="save_as_rda.rda")
 
 #=====R can send SQL to database and load data back into R=====
 #---You need to prepare things:
-# - 1. a database driver: 
+# - 1. a database driver: JDBC driver is an API allowing interaction 
+#      between java applications (Rstudio is a java application) and database.
+#    - You should be able to see an "ojdbc6.jar" file under your home directory
 
 # - 2. a configuration file with your database/Oracle credentials
 config_file<-read.csv("config.csv",stringsAsFactors = F)
   
 # - 3. RJDBC and DBI package
-p_load(DBI,RJDBC)
-# .rs.restartR() #--might need to run this line to restart R 
+pacman::p_load(DBI,RJDBC)
+# .rs.restartR() #--might need to run this line to restart R
 
 drv<-RJDBC::JDBC(driverClass="oracle.jdbc.OracleDriver",
-                 classPath="/u02/PRVM868/ojdbc6.jar")
-url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database)
+                 classPath="./ojdbc6.jar") #-- take the db driver from your home directory
+url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database) #--standard connection url
 conn <- RJDBC::dbConnect(drv=drv,
-                         url=url, 
+                         url=url,
                          user=config_file$username, 
                          password=config_file$password)
 summary(conn)
