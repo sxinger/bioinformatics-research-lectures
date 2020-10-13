@@ -7,13 +7,17 @@ output: html_document
 
 Let's do some preparation for the class by running the following chunk of codes:
 
-```{r setup}
+```{r setup, include=FALSE}
 #set up rmd print-out style
 knitr::opts_chunk$set(message=F,warning=F,fig.width=6, fig.height=3)
 
 #load packages
-# install.packages("tidyverse") #note: tidyverse is a group of packages
-pacman::p_load(tidyverse)
+#--need to install on older verion of "lme4" package for VIM to be installed
+packageurl <- "https://cran.r-project.org/src/contrib/Archive/nloptr/nloptr_1.2.1.tar.gz"  
+install.packages(packageurl, repos=NULL, type="source")
+
+#--now, install all the packages for this script
+pacman::p_load(tidyverse, VIM, mice)
 ```
 
 
@@ -226,6 +230,212 @@ asd_down_bmi_median<-asd_down_bmi %>%
 asd_down_bmi_median %>% sample_n(5)
 ```
 
+**************************************************************************************************
+**************************************************************************************************
+
+### Data Cleaning 
+Real world data are usually "messy" due to a variety of reasons:
+* random technical issues with biomonitors
+* human errors in entry
+* clinical variables are not consistently collected since EHR were collected for non-study purposes
+    * adverse events may be recorded particularly for certain study, but not regularly recorded as a routine check; clinical locations may be a key factor affecting.  
+* missing information due to patients seeking care in other facility
+    * even within the same facility, the frequencies of seeing the patients can be highly variable
+    * different flowsheet documentations across different clinics
+...
+
+**************************************************************************************************
+
+#### Data Cleaning - Outlier (Chapter 14)
+
+Outliers, also called abnormalities, discordants, deviants, and anomalies, are a data point which is difference from the remaining data. Outliers not only include errors but also dicordant data that arises from natural variationm, which may carry interesting information (e.g. fraud detection). 
+
+```{r bmi_density}
+ggplot(asd_down_bmi_median,aes(x=bmi_med))+
+  geom_density(aes(fill=DIAGNOSIS),alpha=0.5)
+```
+
+**************************************************************************************************
+
+The following are several basic methods to identify outliers:
+
+* Tukey's Method: [Q1-1.5IQR, Q3+1.5IQR], where Q1 is the first quartile, Q3 is the 3rd quartile, and IQR is the interquartile range (IQR = Q3-Q1)
+    * Assumption: the underlying distribution is not too skewed 
+    * Transformations can be help reshape the distribution to satisfy the assumption
+
+```{r outlier_tukey}
+ggplot(asd_down_bmi_trans %>% filter(trans_type %in%  c("0.original","1.log")),
+       aes(y=trans_bmi,x=DIAGNOSIS))+
+  geom_boxplot()+
+  facet_wrap(~trans_type,scales="free",nrow=1)
+```
+
+
+* Z-score: z = (x-m)/s, where m is the mean and s is the sample standard deviation. It computes the number of standard deviations away from the mean. A rule of thumb for identifying outliers is |z| >= 3
+    * Assumption: the underlying distribution is likely to be normal
+    * Transformations can be help reshape the distribution to satisfy the assumption
+
+```{r}
+bmi_med_m<-mean(asd_down_bmi_median$bmi_med,na.rm=T)
+bmi_med_sd<-sd(asd_down_bmi_median$bmi_med,na.rm=T)
+
+asd_down_bmi_z<-asd_down_bmi_median %>% 
+  mutate(bmi_z=(bmi_med-bmi_med_m)/bmi_med_sd)
+
+ggplot(asd_down_bmi_z,aes(x=bmi_z))+
+  geom_density(aes(fill=DIAGNOSIS))+
+  geom_vline(xintercept = 3,linetype=2)
+```
+
+
+* Cook's Distance: in linear regression, cook's distance is commonly used to estimate the influence of a data point on the coefficients. 
+    * It measures the average effects of deleting a given observation
+    * The higher the Cook's distance is, the more influential a point will be
+    * Some commonly-used cut-off values are: 0.5, 1, 4/N (N: total number of observations)
+
+```{r cook_dist}
+data_fit<-asd_down_bmi_median %>%
+  filter(!is.na(bmi_med)) %>%
+  dplyr::select(PATIENT_NUM,bmi_med,DIAGNOSIS) %>%
+  mutate(ind=1) %>% spread(DIAGNOSIS,ind,fill=0)
+
+fit1<-glm(bmi_med ~ both+down, data=data_fit)
+fit2<-glm(log(bmi_med) ~ both+down, data=data_fit)
+
+ggplot(dat_cook<-data_fit %>% mutate(cooks=cooks.distance(fit1),trans_type="0.original") %>%
+         bind_rows(data_fit %>% mutate(cooks=cooks.distance(fit2),trans_type="1.log")),
+       aes(x=bmi_med,y=cooks))+
+  geom_point(aes(color=trans_type))+
+  geom_hline(yintercept = 0.03,linetype=2)
+```
+
+
+**************************************************************************************************
+
+**Take Home Messages**
+
+  * Distinguishing outliers as useful or uninformative is not clear cut
+  * In certain contexts, outliers may represent extremely valuable information that must not be discarded.      
+  * Various methods exist and will identify possible or likely outliers, but the expert eye must prevail before deleting or correcting outliers.
+
+**************************************************************************************************
+
+#### Data Cleaning - Missing Data (Chapter 13)
+To deal with missing data, the first step is to identify the **source** of "missingness":
+i. the value could be missing because **it was forgotton or lost** (e.g. disconnection of sensors, errors in communications across different databases, human errors, etc.);
+ii. the value could be missing because **it was not applicable to the instance** (e.g. a patient is diconnected from the ventilator because of a medical decision);
+iii. the value could be missing because **it was of no interst to the instance**
+
+**************************************************************************************************
+
+##### Type of Missing
+Understanding the source of "missingness" will help determine if the "missingness" is recoverable. In general, there are three types of "missingness":  
+
+**Missing Completely at Randm (MCAR)** - the probability of an observation being missing depends only on itself (e.g. disconnection of sensors, human errors);
+
+**Missing at Random (MAR)** -  the probablity of a value being missing is related only to some observable data (e.g. lab is only taken due to certain diagnosis);    
+
+**Missing Not at Random (MNAR)** - the probablity of a value being missing is related to both observable data and unobservable data (e.g. patients with low blood pressure are more likely to have their blood pressure measured less frequently);
+
+"Missingness" sometimes may just suggest not presenting with certain condition (e.g. missing diagnosis code for cardiovascular disease may just suggest someone doesn't have the condition)
+
+**************************************************************************************************
+
+##### Patterns of Missing
+
+Let's use the `aggr` and `plot` function to explore the missing pattern
+
+```{r plot_missing}
+# calculate missing proportion
+sum(is.na(asd_down_bmi_median$bmi_med))/nrow(asd_down_bmi_median)
+
+# visualize univariate missing pattern
+a <- aggr(asd_down_bmi_median, plot = FALSE)
+plot(a, numbers = TRUE, prop = FALSE)
+
+# visualize bivariate missing pattern
+x <- asd_down_bmi_median[, c("asd_down_bmi_median", "age")]
+marginplot(x)
+```
+
+
+**************************************************************************************************
+
+##### Dealing with Missing
+
+**Deletion**
+
+* Listwise deletion (complete-case analysis): all the observations with at least one missing variable are
+discarded;         
+
+* Pairwise deletion (available-case analysis): only discard the observations with at least one missing among the necessary variables required for specific study
+
+**************************************************************************************************
+
+**Imputation**
+
+* Single value imputation: missing values are filled by some type of "predicted" values.
+    * Mean and Median for numerical variables (can also stratified by demographics)
+    * Mode for categorical variables (can also stratified by demographics)
+    * Linear Interpolation (time series)
+    * Last Observation Carried Forward (pr "sample-and-hold")
+
+* Model based imputation: 
+    * Linear Regression (regress the missing variable against observable variables)
+    * Multiple-Value Imputation (sensitivity analysis)
+        * resampling M times (M ~ 5 - 10)
+        * for each resample, do imputation using the same method
+        * collect results for the M analyses
+        * calculate mean and CI
+    * K-Nearest Neighbors
+        * identify k complete cases who are most similar to the missing case
+        * impute with their mean
+        * choice of k is very critical, which requires sensitivity analysis
+
+```{r del_na}
+# since the missing rate is quite low, we decided to "delete" incomplete records
+asd_down_bmi_median<-asd_down_bmi_median %>% 
+  filter(!is.na(bmi_med))
+```
+
+
+```{r impute_simple}
+
+```
+
+
+```{r impute_lm}
+
+```
+
+
+```{r impute_knn}
+
+```
+
+
+```{r impute_mice}
+
+```
+
+
+```{r}
+
+```
+
+
+
+**************************************************************************************************
+
+**Take Home Messages**
+
+* Always evaluate the reasons for missingness: is it MCAR/MAR/MNAR?
+* What is the proportion of missing data per variable and per record?
+* Multiple imputation approaches generally perform better than other methods.
+    * Choice of the best imputation method
+        * Make clinical sense in the study context
+        * Select the approach providing the best accuracy
+          
 
 **************************************************************************************************
 **************************************************************************************************
@@ -234,6 +444,7 @@ asd_down_bmi_median %>% sample_n(5)
 
 The aim of data transformation is to transform the data values into a format, scale or unit that is more suitable for analysis
 
+**************************************************************************************************
 
 #### Encoding Categorical Data
 
@@ -277,6 +488,25 @@ bmi_cat<-asd_down_bmi_median %>%
                                   bmi_med >= 30 ~ 'obese'))
 ```
 
+
+**************************************************************************************************
+
+#### Power Transformation
+
+A common technique used to stabilize variance for numerical data, make the data more normal-distribution-like
+
+```{r bmi_transform, fig.width=10, fig.height=6}
+asd_down_bmi_trans<-asd_down_bmi_median %>% mutate(trans_bmi=bmi_med, trans_type="0.original") %>%
+  bind_rows(asd_down_bmi_median %>% mutate(trans_bmi=log(bmi_med), trans_type="1.log")) %>%
+  bind_rows(asd_down_bmi_median %>% mutate(trans_bmi=bmi_med^(1/2), trans_type="2.sqrt")) %>%
+  bind_rows(asd_down_bmi_median %>% mutate(trans_bmi=bmi_med^(1/3), trans_type="3.cubert"))
+
+ggplot(asd_down_bmi_trans,aes(x=trans_bmi))+
+  geom_density(aes(fill=DIAGNOSIS),alpha=0.5)+
+  facet_wrap(~trans_type,scales="free",nrow=2)
+```
+
+
 **************************************************************************************************
 
 #### Normalization 
@@ -302,6 +532,7 @@ ggplot(bmi_cat_norm,aes(y=val))+
   facet_wrap(~var,scales = "free",nrow=1)
 
 ```
+
 
 **************************************************************************************************
 
