@@ -18,6 +18,8 @@ install.packages(packageurl, repos=NULL, type="source")
 
 #--now, install all the packages for this script
 pacman::p_load(tidyverse, VIM, mice)
+
+#~1min
 ```
 
 
@@ -113,14 +115,14 @@ summary(idd_pt$AGE)
 * This step can be accomplished in any analytical software available on greenheron (e.g. SQL, R, SAS, STAT, Python), but we usually recommend SQL for its efficiency
 
 
-*Working example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism, and both*
+*Working example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism (autism spectrum disorder), and both*
 
 ```{sql integrate_data,connection = conn,output.var="asd_down_bmi"}
 with both_dx1 as (
 select d.patient_num
       ,c.code_label
       ,min(start_date) first_dxdt
-from prvm_idd_data_view d
+from prvm_idd_data_view2 d
 join prvm_idd_code_info_view c
 on d.code = c.code
 where lower(c.code_label) like '%down%' or 
@@ -146,12 +148,13 @@ group by patient_num
 ),
      bmi as (
 select dat.patient_num, to_number(dat.nval) as bmi, dat.start_date as bmi_date
-from prvm_idd_data_view dat
+from prvm_idd_data_view2 dat
 where exists (select 1 from prvm_idd_code_info_view cd
               where cd.code = dat.code and
                     lower(cd.code_label) like '%mass%') 
 )
-select e.patient_num
+select distinct
+       e.patient_num
       ,p.birth_date
       ,p.sex
       ,p.race
@@ -173,8 +176,8 @@ left join down_dx1 d on e.patient_num = d.patient_num
 left join autism_dx1 a on e.patient_num = a.patient_num
 left join bmi on e.patient_num = bmi.patient_num
 where bmi.bmi_date >= least (coalesce(a.autism_onset,current_date),
-                               coalesce(d.down_onset,current_date))
-order by e.patient_num, bmi.bmi_date
+                               coalesce(d.down_onset,current_date)) or 
+      bmi.bmi_date is null            
 ```
 
 Note that we only want to include *adult* patients, let's do a quick cleaning up:
@@ -210,21 +213,20 @@ There are many different methods for data abstractions, which can be as simple a
 We will demonstrate a simple data abstraction method in R, which can also be achieved in SQL
 
 ```{r get_median_bmi}
-##====================================================
+##======================================================
 # "group_by" and "summarize" function for summarizing 
 #  variables according to certain grouping criteria and
 #  functions of interests
 ##======================================================
 asd_down_bmi_median<-asd_down_bmi %>%
-  mutate(BMI=as.numeric(BMI)) %>%
   group_by(PATIENT_NUM,SEX,RACE,AGE_AT_FIRSTDX,DIAGNOSIS) %>%
-  summarize(bmi_med = median(BMI,na.rm=T)) %>%
+  summarize(bmi_median = median(BMI)) %>%
   ungroup
 ```
 
 
 ```{r}
-##====================================================
+##=====================================================
 # "sampl_n" function for randomly sampling n rows 
 ##=====================================================
 asd_down_bmi_median %>% sample_n(5)
@@ -246,13 +248,28 @@ Real world data are usually "messy" due to a variety of reasons:
 
 **************************************************************************************************
 
-#### Data Cleaning - Outlier (Chapter 14)
+#### Data Cleaning - Outlier, Obvious Inconsistencies (Chapter 14)
 
-Outliers, also called abnormalities, discordants, deviants, and anomalies, are a data point which is difference from the remaining data. Outliers not only include errors but also dicordant data that arises from natural variationm, which may carry interesting information (e.g. fraud detection). 
+Obvious Inconsistencies: occur when a record contains a value or combination of values that cannot correspond to a real-world situation
+
+Outliers: also called abnormalities, discordants, deviants, and anomalies, are a data point which is difference from the remaining data. Outliers not only include errors but also dicordant data that arises from natural variationm, which may carry interesting information (e.g. fraud detection). 
 
 ```{r bmi_density}
-ggplot(asd_down_bmi_median,aes(x=bmi_med))+
+# a density plot of bmi for all patients
+ggplot(asd_down_bmi_median,aes(x=bmi_median))+
+  geom_density(fill="blue",alpha=0.5)
+
+# a boxplot (box-and-whisker plot) for bmi of all patients
+ggplot(asd_down_bmi_median,aes(y=bmi_median))+
+  geom_boxplot(aes(fill="blue"),alpha=0.5)
+
+# a density plot of bmi for all patients stratified by diagnosis groups
+ggplot(asd_down_bmi_median,aes(x=bmi_median))+
   geom_density(aes(fill=DIAGNOSIS),alpha=0.5)
+
+# a boxplot (box-and-whisker plot) 
+ggplot(asd_down_bmi_median,aes(y=bmi_median))+
+  geom_boxplot(aes(fill=DIAGNOSIS),alpha=0.5)
 ```
 
 **************************************************************************************************
@@ -264,10 +281,24 @@ The following are several basic methods to identify outliers:
     * Transformations can be help reshape the distribution to satisfy the assumption
 
 ```{r outlier_tukey}
-ggplot(asd_down_bmi_trans %>% filter(trans_type %in%  c("0.original","1.log")),
-       aes(y=trans_bmi,x=DIAGNOSIS))+
+##=====================================================
+# "mutate" function for adding new column or updating an
+# existing column
+##=====================================================
+asd_down_bmi_trans<-asd_down_bmi_median %>%
+  mutate(bmi_median_log=log(bmi_median) # log transformation
+         )
+```
+
+
+
+```{r, fig.width=12}
+ggplot(asd_down_bmi_trans %>%
+         select(PATIENT_NUM,DIAGNOSIS,bmi_median,bmi_median_log) %>%
+         gather(bmi_type,bmi_value,-PATIENT_NUM,-DIAGNOSIS),
+       aes(y=bmi_value))+
   geom_boxplot()+
-  facet_wrap(~trans_type,scales="free",nrow=1)
+  facet_wrap(~bmi_type,scales="free",nrow=1)
 ```
 
 
@@ -276,37 +307,48 @@ ggplot(asd_down_bmi_trans %>% filter(trans_type %in%  c("0.original","1.log")),
     * Transformations can be help reshape the distribution to satisfy the assumption
 
 ```{r}
-bmi_med_m<-mean(asd_down_bmi_median$bmi_med,na.rm=T)
-bmi_med_sd<-sd(asd_down_bmi_median$bmi_med,na.rm=T)
+bmi_med_m<-mean(asd_down_bmi_median$bmi_median,na.rm=T)
+bmi_med_sd<-sd(asd_down_bmi_median$bmi_median,na.rm=T)
 
 asd_down_bmi_z<-asd_down_bmi_median %>% 
-  mutate(bmi_z=(bmi_med-bmi_med_m)/bmi_med_sd)
+  mutate(bmi_z=(bmi_median-bmi_med_m)/bmi_med_sd)
 
 ggplot(asd_down_bmi_z,aes(x=bmi_z))+
-  geom_density(aes(fill=DIAGNOSIS))+
+  geom_density(aes(fill=DIAGNOSIS),alpha=0.4)+
   geom_vline(xintercept = 3,linetype=2)
 ```
 
 
-* Cook's Distance: in linear regression, cook's distance is commonly used to estimate the influence of a data point on the coefficients. 
+* Cook's Distance: in linear regression, cook's distance is commonly used to estimate the influence of a data point on the coefficients ("Influence Diagnostic"). 
     * It measures the average effects of deleting a given observation
     * The higher the Cook's distance is, the more influential a point will be
-    * Some commonly-used cut-off values are: 0.5, 1, 4/N (N: total number of observations)
+    * Some commonly-used cut-off values are: 0.5, 1, 4/(N-k-1) (N: total number of observations)
+    * Steps to compute Cook’s distance:
+        * delete observations one at a time
+        * refit the regression model on remaining (n−1) observations
+        * examine how much all of the fitted values change when the ith observation is deleted.
 
 ```{r cook_dist}
 data_fit<-asd_down_bmi_median %>%
-  filter(!is.na(bmi_med)) %>%
-  dplyr::select(PATIENT_NUM,bmi_med,DIAGNOSIS) %>%
+  filter(!is.na(bmi_median)) %>%
+  dplyr::select(PATIENT_NUM,bmi_median,AGE_AT_FIRSTDX,DIAGNOSIS) %>%
   mutate(ind=1) %>% spread(DIAGNOSIS,ind,fill=0)
 
-fit1<-glm(bmi_med ~ both+down, data=data_fit)
-fit2<-glm(log(bmi_med) ~ both+down, data=data_fit)
+fit<-glm(bmi_median ~ both+down+AGE_AT_FIRSTDX, data=data_fit,family="Gamma")
+cooks_d<-cooks.distance(fit)
 
-ggplot(dat_cook<-data_fit %>% mutate(cooks=cooks.distance(fit1),trans_type="0.original") %>%
-         bind_rows(data_fit %>% mutate(cooks=cooks.distance(fit2),trans_type="1.log")),
-       aes(x=bmi_med,y=cooks))+
-  geom_point(aes(color=trans_type))+
-  geom_hline(yintercept = 0.03,linetype=2)
+ggplot(dat_cook<-data_fit %>% mutate(cooks=cooks_d,pat_idx=rank(PATIENT_NUM)),
+       aes(x=pat_idx,y=cooks))+
+  geom_line(aes())+
+  geom_hline(yintercept = 0.05,linetype=2,color="blue")+
+  labs(x="BMI",y="Cook's D")
+
+ggplot(dat_cook<-data_fit %>% mutate(cooks=cooks.distance(fit),pat_idx=rank(PATIENT_NUM)),
+       aes(x=bmi_median,y=cooks))+
+  geom_point(aes())+
+  geom_hline(yintercept = 0.05,linetype=2,color="blue")+
+  labs(x="BMI",y="Cook's D")
+  
 ```
 
 
@@ -343,23 +385,21 @@ Understanding the source of "missingness" will help determine if the "missingnes
 
 ##### Patterns of Missing
 
-Let's use the `aggr` and `plot` function to explore the missing pattern
+Let's use the `VIM::aggr` function to explore the missing pattern
 
 ```{r plot_missing}
 # calculate missing proportion
 sum(is.na(asd_down_bmi_median$bmi_med))/nrow(asd_down_bmi_median)
 
-# visualize univariate missing pattern
-a <- aggr(asd_down_bmi_median, plot = FALSE)
-plot(a, numbers = TRUE, prop = FALSE)
 
-# visualize bivariate missing pattern
-x <- asd_down_bmi_median[, c("asd_down_bmi_median", "age")]
-marginplot(x)
+asd_down_bmi_median2<-asd_down_bmi_median
+colnames(asd_down_bmi_median2)<-c("PAT_NUM","SEX","RACE","AGE","DX","BMI")
+VIM::aggr(asd_down_bmi_median2,prop =TRUE, plot = TRUE)
 ```
 
 
-**************************************************************************************************
+***************************************************************************************************
+
 
 ##### Dealing with Missing
 
@@ -369,6 +409,14 @@ marginplot(x)
 discarded;         
 
 * Pairwise deletion (available-case analysis): only discard the observations with at least one missing among the necessary variables required for specific study
+
+
+```{r del_na}
+# since the missing rate is quite low, we decided to "delete" incomplete records
+asd_down_bmi_median_del_na<-asd_down_bmi_median %>% 
+  filter(!is.na(bmi_med))
+```
+
 
 **************************************************************************************************
 
@@ -392,34 +440,31 @@ discarded;
         * impute with their mean
         * choice of k is very critical, which requires sensitivity analysis
 
-```{r del_na}
-# since the missing rate is quite low, we decided to "delete" incomplete records
-asd_down_bmi_median<-asd_down_bmi_median %>% 
-  filter(!is.na(bmi_med))
-```
-
 
 ```{r impute_simple}
-
-```
-
-
-```{r impute_lm}
-
+##=====================================================
+# "replace_na" function for for quick imputation using
+# a constant value
+##=====================================================
+bmi_pop_median<-median(asd_down_bmi_median$bmi_median,na.rm=T)
+asd_down_bmi_median_imp1<-asd_down_bmi_median %>%
+  replace_na(list(bmi_median=bmi_pop_median))
 ```
 
 
 ```{r impute_knn}
-
+bmi_knn_imputed<-VIM::kNN(asd_down_bmi_median)
+asd_down_bmi_median_imp1<-asd_down_bmi_median %>% select(-bmi_median) %>%
+  left_join(bmi_knn_imputed %>% select(PATIENT_NUM,bmi_median),
+            by="PATIENT_NUM")
 ```
 
 
 ```{r impute_mice}
-
-```
-
-
-```{r}
+bmi_mice<-mice(asd_down_bmi_median[,c("AGE_AT_FIRSTDX","bmi_median")], m=1, maxit = 50, method = 'pmm', seed = 500, printFlag=F)
+bmi_mice_imputed<-bmi_mice$imp$bmi_median
+asd_down_bmi_median_imp2<-asd_down_bmi_median %>% select(-bmi_median) %>%
+  mutate(bmi_median=complete(bmi_mice,1)$bmi_median)
 
 ```
 
