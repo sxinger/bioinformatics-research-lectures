@@ -482,11 +482,10 @@ asd_down_bmi_median_imp1<-asd_down_bmi_median %>%
 ```
 
 
-* Model based imputation:
-    * K-Nearest Neighbors
-        * identify k complete cases who are most similar to the missing case
-        * impute with their mean
-        * choice of k is very critical, which requires sensitivity analysis
+* Model based imputation: K-Nearest Neighbors
+    * identify k complete cases who are most similar to the missing case
+    * impute with their mean
+    * choice of k is very critical, which requires sensitivity analysis
 
 ```{r impute_knn}
 ##========================================================
@@ -498,12 +497,12 @@ asd_down_bmi_median_imp2<-asd_down_bmi_median %>% select(-bmi_median) %>%
             by="PATIENT_NUM")
 ```
 
-    * Linear Regression (regress the missing variable against observable variables)
-    * Multiple-Value Imputation (sensitivity analysis)
-        * resampling M times (M ~ 5 - 10)
-        * for each resample, do imputation using the same method
-        * collect results for the M analyses
-        * calculate mean and CI
+* Model based imputation: Linear Regression (regress the missing variable against observable variables)
+* Model based imputation: Multiple-Value Imputation Chain Equation (MICE)
+    * resampling M times (M ~ 5 - 10)
+    * for each resample, do imputation using the same method
+    * collect results for the M analyses
+    * calculate mean and CI
 
 ```{r impute_mice}
 bmi_mice<-mice(asd_down_bmi_median[,c("AGE_AT_FIRSTDX","bmi_median")], m=2, maxit = 50, method = 'pmm', seed = 500, printFlag=F)
