@@ -116,9 +116,13 @@ summary(idd_pt$AGE)
 * This step can be accomplished in any analytical software available on greenheron (e.g. SQL, R, SAS, STAT, Python), but we usually recommend SQL for its efficiency
 
 
-*Working example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism (autism spectrum disorder), and both*
+#####*Working example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism (autism spectrum disorder), and both*
 
 ```{sql integrate_data,connection = conn,output.var="asd_down_bmi"}
+--note to self: need to make sure that students all have access to the following tables on Oracle: 
+-- xsong.prvm_idd_data_view2
+-- xsong.prvm_idd_patient_view2
+-- xsong.prvm_idd_code_info_view2
 with both_dx1 as (
 select d.patient_num
       ,c.code_label
