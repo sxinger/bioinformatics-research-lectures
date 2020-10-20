@@ -701,7 +701,7 @@ Let's put everything together, and save a final version of cleaned dataset. Reca
 
 ```{r final_data}
 data_final<-asd_down_bmi_median_imp3 %>%
-  select(PATIENT_NUM,AGE_AT_FIRSTDX,bmi_median) %>%
+  select(PATIENT_NUM,AGE_AT_FIRSTDX,DIAGNOSIS,bmi_median) %>%
   left_join(sex_ohe, by="PATIENT_NUM") %>%
   left_join(race_ohe,by="PATIENT_NUM")
 
