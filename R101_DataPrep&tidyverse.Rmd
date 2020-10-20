@@ -696,8 +696,8 @@ Let's put everything together, and save a final version of cleaned dataset. Reca
 - Take median BMI for each patient ( _Data Abstraction_ )   
 - Correct BMI outliers ( _Data Clean_ )   
 - Impute missing BMI ( _Data Clean_ )   
-- One-hot-encode for Sex and Race ( _Data Transformation_ )   
 - Group "unknown" category for Race ( _Data Aggregation_ )    
+- One-hot-encode for Sex and Race ( _Data Transformation_ )   
 
 ```{r final_data}
 data_final<-asd_down_bmi_median_imp3 %>%
