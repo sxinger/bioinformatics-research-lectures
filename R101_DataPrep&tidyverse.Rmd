@@ -14,8 +14,8 @@ knitr::opts_chunk$set(message=F,warning=F,fig.width=6, fig.height=3)
 #load packages
 #--need to install on older verion of "lme4" package for VIM to be installed
 #--just need to run once
-# packageurl <- "https://cran.r-project.org/src/contrib/Archive/nloptr/nloptr_1.2.1.tar.gz"  
-# install.packages(packageurl, repos=NULL, type="source")
+packageurl <- "https://cran.r-project.org/src/contrib/Archive/nloptr/nloptr_1.2.1.tar.gz"
+install.packages(packageurl, repos=NULL, type="source")
 
 #--now, install all the packages for this script
 pacman::p_load(tidyverse, VIM, mice)
@@ -566,13 +566,15 @@ For example, in our example, the sex and race are categorical variables, which w
 sex_ohe<-asd_down_bmi_median %>% 
   dplyr::select(PATIENT_NUM,SEX) %>%
   mutate(sex_f_ind=case_when(SEX =="f" ~ 1,
-                             TRUE ~ 0))
+                             TRUE ~ 0)) %>%
+  select(-SEX)
 
 head(sex_ohe)
 ```
 
 
 ```{r encode_race}
+# perform one-hot-encoding again with the grouped categories
 race_ohe<-asd_down_bmi_median %>% 
   dplyr::select(PATIENT_NUM,RACE) %>%
   mutate(ind=1) %>%
@@ -665,6 +667,14 @@ asd_down_bmi_median<-asd_down_bmi_median %>%
 table(asd_down_bmi_median$RACE)
 ```
 
+```{r ohe}
+race_ohe<-asd_down_bmi_median %>% 
+  dplyr::select(PATIENT_NUM,RACE) %>%
+  mutate(RACE2=RACE,ind=1) %>%
+  spread(RACE2,ind, fill = 0)
+```
+
+
 Sometime, you may want to aggregate low level attributes into higher level ones. For example, cardiovascular disease are recorded as multiple lower-level diagnosis codes in EHR, which may need to be aggregated. However, there may also be times when you want to keep such granularity. 
 
 ```{sql, connection=conn}
@@ -677,7 +687,25 @@ group by variable
 There are also some statistical approaches to aggregate the variables in a more systemic fashion (e.g. principal component analysis, latent factor analysis), which are usually used in high-dimensional data (i.e. more than hundreds of variables). However, such approaches may impair the interpretability of your model. We may re-visit this topic with more details when we come across with analysis involving high-dimensional data.    
 
 
+**********************************************************************************
 
+#### Put things together
 
+Let's put everything together, and save a final version of cleaned dataset. Recall that we have done the following cleaning for the dataset:    
+
+- Take median BMI for each patient ( _Data Abstraction_ )   
+- Correct BMI outliers ( _Data Clean_ )   
+- Impute missing BMI ( _Data Clean_ )   
+- One-hot-encode for Sex and Race ( _Data Transformation_ )   
+- Group "unknown" category for Race ( _Data Aggregation_ )    
+
+```{r final_data}
+data_final<-asd_down_bmi_median_imp3 %>%
+  select(PATIENT_NUM,AGE_AT_FIRSTDX,bmi_median) %>%
+  left_join(sex_ohe, by="PATIENT_NUM") %>%
+  left_join(race_ohe,by="PATIENT_NUM")
+
+saveRDS(data_final,file="./idd_bmi_final.rda")
+```
 
 
