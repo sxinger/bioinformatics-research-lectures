@@ -14,8 +14,8 @@ knitr::opts_chunk$set(message=F,warning=F,fig.width=6, fig.height=3)
 #load packages
 #--need to install on older verion of "lme4" package for VIM to be installed
 #--just need to run once
-packageurl <- "https://cran.r-project.org/src/contrib/Archive/nloptr/nloptr_1.2.1.tar.gz"
-install.packages(packageurl, repos=NULL, type="source")
+# packageurl <- "https://cran.r-project.org/src/contrib/Archive/nloptr/nloptr_1.2.1.tar.gz"
+# install.packages(packageurl, repos=NULL, type="source")
 
 #--now, install all the packages for this script
 pacman::p_load(tidyverse, VIM, mice)
