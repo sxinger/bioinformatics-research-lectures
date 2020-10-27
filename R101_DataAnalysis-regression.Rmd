@@ -38,7 +38,7 @@ str(idd_bmi)
 
 recall the question from last class we were trying to answer:
 
-> To estimate if age_at_bmi is associated with bmi among adult IDD patients
+> To estimate if age_at_firstdx is associated with bmi among adult IDD patients
 
 
 ```{r bmi_age_plot}
@@ -49,7 +49,7 @@ ggplot(idd_bmi, aes(x=AGE_AT_FIRSTDX,y=bmi_median))+
 
 
 ```{r bmi_age_lm}
-fit1<-glm(log(bmi_median) ~ log(AGE_AT_FIRSTDX), data=idd_bmi)
+fit1<-glm(bmi_median ~ AGE_AT_FIRSTDX, data=idd_bmi)
 
 #model summary
 summary.lm(fit1)
@@ -113,7 +113,7 @@ summary.lm(fit1)
 
 **Model Interpretation, Conclusion, and Future Directions**
 
-* According to p-value (0.467) of coefficient for age, we conclude that there is no statistical significant association between age at IDD onset and bmi among IDD patients (Autism or Downs) based on the provided data.
+* According to p-value (0.992) of coefficient for age, we conclude that there is no statistical significant association between age at IDD onset and bmi among IDD patients (Autism or Downs) based on the provided data.
 
 * R-square (<0.1%) suggests that the model is far away from being sufficient. We need to include more variables to understand the variation of BMI among IDD patients
 
@@ -127,7 +127,7 @@ summary.lm(fit1)
 
 Now, let's look at another question or interest: 
 
-> To estimate if bmi is a risk factor for developing obstructive sleep apnea (OSA) among IDD patients
+> To estimate if bmi is a risk factor for developing obstructive sleep apnea (OSA) among adult IDD patients
 
 #### Contigency Table
 
@@ -208,7 +208,7 @@ fit2<-glm(OSA_ind ~ bmi_overwt_ind, data=idd_bmi, family=binomial())
 summary(fit2)
 ```
 
-Let's take a closer look at the model and interpret the results. As you can see, the `Estimate` of `bmi_overwt_ind` (or b1, or coefficient) is 1.2524. By taking the exponential of the coefficient, we get exp(1.2524) = 3.4989 (corresponding to the Odds ratio we calculated above, 3.4989). 
+Let's take a closer look at the model and interpret the results. As you can see, the `Estimate` of `bmi_overwt_ind` (or b1, or coefficient) is 0.9067. By taking the exponential of the coefficient, we get exp(0.9067) = 2.476195 (corresponding to the Odds ratio we calculated above, 2.476195). 
 
 In addition, based on the `Estimate` of `(Intercept)` (or b0), we can also calculate the _odds of sleep apnea among non-overweight patient_ simply as: exp(b0) = exp(-4.0134) = 0.01807, which is corresponding to the `odds_non_ow` we calculated above.
 
@@ -258,11 +258,11 @@ TN<-416
 FP<-707
 FN<-48
 
-P<-TP+FN
-N<-TN+FP
+Ture_case<-TP+FN
+False_case<-TN+FP
 
-sensitivity<-TP/P
-specificity<-TN/N
+sensitivity<-TP/Ture_case
+specificity<-TN/False_case
 
 sensitivity
 specificity
