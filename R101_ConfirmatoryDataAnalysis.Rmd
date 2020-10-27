@@ -52,7 +52,8 @@ idd_bmi<-idd_bmi %>%
                             TRUE ~ 0))
 ```
 
-*Motivation Research Question: I want to examine if IDD patients with down syndrom is more likely to be obese (or with higher BMI) than patients with autism.*
+
+> Motivation Research Question: I want to examine if IDD patients with down syndrom is more likely to be obese (or with higher BMI) than patients with autism.
 
 
 #### Categorical Exposure and Categorical Outcome

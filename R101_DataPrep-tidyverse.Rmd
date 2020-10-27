@@ -116,7 +116,7 @@ summary(idd_pt$AGE)
 * This step can be accomplished in any analytical software available on greenheron (e.g. SQL, R, SAS, STAT, Python), but we usually recommend SQL for its efficiency
 
 
-#####*Working example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism (autism spectrum disorder), and both*
+#####*Motivation example: I want to examine if there is a significant difference of BMI among the three groups of adult patients: just down, just autism (autism spectrum disorder), and both*
 
 ```{sql integrate_data,connection = conn,output.var="asd_down_bmi"}
 --note to self: need to make sure that students all have access to the following tables on Oracle: 
@@ -126,7 +126,7 @@ summary(idd_pt$AGE)
 with both_dx1 as (
 select d.patient_num
       ,c.code_label
-      ,min(start_date) first_dxdt
+      ,min(d.start_date) first_dxdt
 from xsong.prvm_idd_data_view2 d
 join xsong.prvm_idd_code_info_view c
 on d.code = c.code
@@ -151,6 +151,14 @@ from both_dx1
 where lower(code_label) like '%autism%'
 group by patient_num
 ),
+     osa_dx1 as (
+select patient_num, min(d.start_date) osa_onset
+from xsong.prvm_idd_data_view2 d
+join xsong.prvm_idd_code_info_view c
+on d.code = c.code
+where lower(c.code_label) like '%sleep%'
+group by d.patient_num
+),
      bmi as (
 select dat.patient_num, to_number(dat.nval) as bmi, dat.start_date as bmi_date
 from xsong.prvm_idd_data_view2 dat
@@ -166,6 +174,7 @@ select distinct
       ,p.death_date
       ,d.down_onset
       ,a.autism_onset
+      ,osa.osa_onset
       ,round((a.autism_onset-p.birth_date)/365.25) age_at_autism
       ,round((d.down_onset-p.birth_date)/365.25) age_at_down
       ,round((e.first_dxdt-p.birth_date)/365.25) age_at_firstdx
@@ -173,12 +182,14 @@ select distinct
             when a.autism_onset is not null and d.down_onset is null then 'autism'
             when d.down_onset is not null and a.autism_onset is null then 'down'
        end as diagnosis
+      ,round((osa.osa_onset-p.birth_date)/365.25) age_at_osa
       ,bmi.bmi
       ,bmi.bmi_date
 from either_dx1 e
 join xsong.prvm_idd_patient_view p on e.patient_num = p.patient_num
 left join down_dx1 d on e.patient_num = d.patient_num 
 left join autism_dx1 a on e.patient_num = a.patient_num
+left join osa_dx1 osa on e.patient_num = osa.patient_num
 left join bmi on e.patient_num = bmi.patient_num
 where bmi.bmi_date >= least (coalesce(a.autism_onset,current_date),
                                coalesce(d.down_onset,current_date)) or 
@@ -703,7 +714,9 @@ Let's put everything together, and save a final version of cleaned dataset. Reca
 data_final<-asd_down_bmi_median_imp3 %>%
   select(PATIENT_NUM,AGE_AT_FIRSTDX,DIAGNOSIS,bmi_median) %>%
   left_join(sex_ohe, by="PATIENT_NUM") %>%
-  left_join(race_ohe,by="PATIENT_NUM")
+  left_join(race_ohe,by="PATIENT_NUM") %>%
+  left_join(asd_down_bmi %>% select(PATIENT_NUM,OSA_ONSET,AGE_AT_OSA) %>% unique, by="PATIENT_NUM") %>%
+  mutate(OSA_ind=as.numeric(!is.na(OSA_ONSET)))
 
 saveRDS(data_final,file="./idd_bmi_final.rda")
 ```
