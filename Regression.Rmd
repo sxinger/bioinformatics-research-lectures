@@ -345,7 +345,7 @@ pROC::ggroc(list(Model1=fit3_roc,
 Or more rigorously, you can perform an ANOVA test to compare which model resulted in less error, as follows:
 
 ```{r}
-anova(fit3,fit4,test="Chisq")
+anova(fit3,fit4,test="LRT")
 ```
 
 
