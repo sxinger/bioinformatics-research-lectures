@@ -115,6 +115,10 @@ is.matrix(df)
 
 df_row1<-df[1,]
 
+#---Tibble
+#TODO
+
+
 #print first two rows
 df[1:2,]
 df[c(1,3),]

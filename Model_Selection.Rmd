@@ -27,7 +27,7 @@ idd_bmi<-readRDS("./idd_bmi_final.rda")
 
 Let's recall the logistical model we built last time to answer the research question:
 
-> To estimate if bmi is a risk factor for developing obstructive sleep apnea (OSA) among adult IDD patients
+> To identify risk factors for developing obstructive sleep apnea (OSA) among adult IDD patients, so that we build a predictive model for predicting likelihood of OSA among new IDD patients
 
 We built two logistic regression models, with different set of predictors: 
 
@@ -41,7 +41,7 @@ summary(fit1)
 $$ Model 2: OSA\_ind = b0 + b1*bmi\_median + b2*age\_at\_firstdx$$
 
 ```{r}
-fit2<-glm(OSA_ind ~ bmi_median+sex_f_ind, data=idd_bmi, family=binomial())
+fit2<-glm(OSA_ind ~ bmi_median+AGE_AT_FIRSTDX, data=idd_bmi, family=binomial())
 summary(fit2)
 
 anova(fit1,fit2,test="LRT")
@@ -141,7 +141,7 @@ Let's compare this model with one of the previous models, say fit2
 
 ```{r}
 # compare their AUC
-anova(fit2,fit_filter,test="LRT")
+anova(fit3,fit_filter,test="LRT")
 ```
 
 
@@ -178,6 +178,8 @@ step_model <- step(null_model,
 # Estimate the stepwise predictted probability
 fit_forward<-glm(OSA_ind ~ DIAGNOSIS + bmi_median + AGE_AT_FIRSTDX + sex_f_ind, 
                   data = idd_bmi, family = binomial())
+
+summary(fit_forward)
 ```
 
 * Backward Regression (Recursive Feature Elimination)
@@ -205,12 +207,16 @@ fit_backward<-glm(OSA_ind ~ DIAGNOSIS + bmi_median + AGE_AT_FIRSTDX + sex_f_ind,
 * Bi-directional Stepwise Regression
 
 ```{r}
+# Specify a null model with no predictors
+null_model <- glm(OSA_ind ~ 1, 
+                  data = idd_bmi, family = binomial())
+
 # Specify the full model using all of the potential predictors
 full_model <- glm(OSA_ind ~ bmi_median+AGE_AT_FIRSTDX+sex_f_ind+DIAGNOSIS+RACE, 
                   data = idd_bmi, family = binomial())
 
 # Use a forward stepwise algorithm to build a parsimonious model
-step_model <- step(full_model,
+step_model <- step(null_model,
                    scope = list(lower = null_model, upper = full_model),
                    direction = "both")
 
