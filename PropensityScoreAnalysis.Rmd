@@ -1,0 +1,136 @@
+---
+title: "Propensity Score Analysis (chapter 23)"
+author: "Xing Song"
+date: "11/18/2019"
+output: html_document
+---
+Let's do some preparation for the class by running the following chunk of codes
+
+```{r setup}
+#set up rmd 
+knitr::opts_chunk$set(message=F,warning=F,fig.width=12, fig.height=6)
+
+#load packages
+pacman::p_load(tidyverse,MatchIt, ggrepel)
+
+#load data
+# a demo dataset - "lalonde"
+# data dict: http://sekhon.berkeley.edu/matching/lalonde.html 
+data(lalonde)
+str(lalonde)
+head(lalonde)
+```
+
+
+**************************************************************************************************
+**************************************************************************************************
+
+## Step 1: Decide on the set of covariates/confounders you want to include
+
+Choice of covariates for propensity score estimateion: the model which is used to estimate the propensity scores is not usually the focus of attention, and therefore it does not need to be parsimonious - it only needs to allow balance. [Austin et al.] conducted a large simulation study and showed that the most important variables to include in a propensity score model (and to ensure balance over) are those explanatory variables associated with the outcome of interest. On the other hand, it is not essential to include variables which are associated with treatment assignment but not associated with the outcome.
+
+[Austin et al.]: https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.2580
+
+
+## Step 2: Initial check of the balance of covariates in the treatment and control group
+
+```{r}
+# quick check based on mean
+lalonde %>%
+  group_by(treat) %>%
+  summarize(age_mean=mean(age),
+            educ_mean=mean(educ),
+            black_mean=mean(black),
+            hispan_mean=mean(hispan),
+            married_mean=mean(married),
+            nodegree_mean=mean(nodegree),
+            re74_mean=mean(re74),
+            re75_mean=mean(re75))
+```
+
+```{r}
+# visual check (EDA)
+# e.g. age
+ggplot(lalonde, aes())+
+  geom_boxplot()
+```
+
+
+```{r}
+# hypothese testing check (CDA)
+# e.g. black
+chisq.test(lalonde$treat,lalonde$black)
+
+chk_balance<-glm(treat~black,data=lalonde,family=binomial())
+summary(chk_balance)
+
+
+# e.g. age
+summary(aov(age~treat,data=lalonde))
+
+chk_balance<-glm(treat~age,data=lalonde,,family=binomial())
+summary(chk_balance)
+```
+
+
+## Step 3: Use logistical regression to obtain a PS for each subject using treatment assignment as the response variable
+
+```{r}
+fit_ps<-glm(treat~age+educ+black+hispan+married+nodegree+re74+re75,
+            data=lalonde,family=binomial())
+summary(fit_ps)
+
+lalonde_ps<-lalonde %>%
+  mutate(ps=fit_ps$fitted.values)
+
+ggplot(lalonde_ps,aes(y=ps,fill=as.factor(treat)))+
+  geom_boxplot()
+```
+
+
+## Step 4: Decide on how to integrate PS in the analysis of treatment effect
+## Step 5: Check the balance of covariates in the treatment and control group if you chose to do PS matching in step 4. 
+## Step 6: Build final outcome model to evaluate the treatment effect
+
+* stratification: stratify cohort in to subgroups of different levels of PS, and build model separatly
+* regression: or PS weighting, which is by simply adding PS as an independent variable in the final outcome model
+* matching: or PS matching, 
+
+```{r}
+fit_multi<-glm(re78~treat+age+educ+black+hispan+married+nodegree+re74+re75,
+               data=lalonde)
+summary(fit_multi)
+```
+
+
+A demonstration of the regresion approach:
+
+```{r}
+fit_w_ps<-glm(re78~ps+treat+age+educ+black+hispan+married+nodegree+re74+re75,
+              data=lalonde_ps)
+summary(fit_w_ps)
+```
+
+
+A demonstration of the matching approach: 
+
+```{r}
+ps_match<-matchit(treat~age+educ+black+hispan+married+nodegree+re74+re75,
+                  data=lalonde,
+                  method="nearest",
+                  ratio=1)
+summary(ps_match)
+
+lalonde_ps_match<-match.data(ps_match)
+```
+
+
+```{r}
+fit_w_psm<-glm(re78~treat+age+educ+black+hispan+married+nodegree+re74+re75,
+              data=laldonde_ps_match)
+summary(fit_w_psm)
+```
+
+
+
+
