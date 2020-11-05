@@ -68,7 +68,7 @@ summary(chk_balance)
 # e.g. age
 summary(aov(age~treat,data=lalonde))
 
-chk_balance<-glm(treat~age,data=lalonde,,family=binomial())
+chk_balance<-glm(treat~age,data=lalonde,family=binomial())
 summary(chk_balance)
 ```
 
