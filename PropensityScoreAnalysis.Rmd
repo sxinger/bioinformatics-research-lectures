@@ -51,7 +51,7 @@ lalonde %>%
 ```{r}
 # visual check (EDA)
 # e.g. age
-ggplot(lalonde, aes())+
+ggplot(lalonde, aes(y=re74,fill=as.factor(treat)))+
   geom_boxplot()
 ```
 
@@ -115,7 +115,7 @@ summary(fit_w_ps)
 A demonstration of the matching approach: 
 
 ```{r}
-ps_match<-matchit(treat~age+educ+black+hispan+married+nodegree+re74+re75,
+ps_match<-matchit(treat~age+educ+black+hispan+married+nodegree,
                   data=lalonde,
                   method="nearest",
                   ratio=1)
@@ -127,7 +127,7 @@ lalonde_ps_match<-match.data(ps_match)
 
 ```{r}
 fit_w_psm<-glm(re78~treat+age+educ+black+hispan+married+nodegree+re74+re75,
-              data=laldonde_ps_match)
+              data=lalonde_ps_match)
 summary(fit_w_psm)
 ```
 
