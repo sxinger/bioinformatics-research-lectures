@@ -80,13 +80,15 @@ fit_tree<-ctree(OSA_ind ~ DIAGNOSIS + bmi_median + AGE_AT_FIRSTDX + sex_f_ind + 
 plot(fit_tree)
 ```
 
-Each decision notes usually show:
-* splitting variable
-* splitting criteria
+Each decision notes usually show:       
 
-Each terminal notes usually show:
-* number of training samples ended up in the node
-* distribution of the predicted class (0 = non-sleap-apnea; 1 = sleep-apnea)
+* splitting variable        
+* splitting criteria      
+
+Each terminal notes usually show:       
+
+* number of training samples ended up in the node       
+* distribution of the predicted class (0 = non-sleap-apnea; 1 = sleep-apnea)        
 
 Let's compare the prediction result among the three models
 
@@ -305,12 +307,12 @@ pROC::ggroc(list(Regression1=fit_reg1_ts_roc,
                  Random_Forest50=fit_rf50_ts_roc,
                  Random_Forest200=fit_rf200_ts_roc))+
   geom_abline(intercept=1,linetype=2)+
-  labs(subtitle = paste0("Regression 1 Testing AUC:",round(fit_reg1_roc$auc,4),"\n",
-                         "Regression 2 Testing AUC:",round(fit_reg2_roc$auc,4),"\n",
-                         "Decision-Tree Testing AUC:",round(fit_tree_roc$auc,4),"\n",
-                         "Random-Forest(10) Testing AUC:",round(fit_rf10_roc$auc,4),"\n",
-                         "Random-Forest(50) Testing AUC:",round(fit_rf50_roc$auc,4),"\n",
-                         "Random-Forest(200) Testing AUC:",round(fit_rf200_roc$auc,4)
+  labs(subtitle = paste0("Regression 1 Testing AUC:",round(fit_reg1_ts_roc$auc,4),"\n",
+                         "Regression 2 Testing AUC:",round(fit_reg2_ts_roc$auc,4),"\n",
+                         "Decision-Tree Testing AUC:",round(fit_tree_ts_roc$auc,4),"\n",
+                         "Random-Forest(10) Testing AUC:",round(fit_rf10_ts_roc$auc,4),"\n",
+                         "Random-Forest(50) Testing AUC:",round(fit_rf50_ts_roc$auc,4),"\n",
+                         "Random-Forest(200) Testing AUC:",round(fit_rf200_ts_roc$auc,4)
                          ))
 ```
 
