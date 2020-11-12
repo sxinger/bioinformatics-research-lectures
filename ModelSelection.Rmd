@@ -25,9 +25,9 @@ idd_bmi<-readRDS("./idd_bmi_final.rda")
 **************************************************************************************************
 **************************************************************************************************
 
-Let's recall the logistical model we built last time to answer the research question:
+Let's recall the logistic model we built last time to answer the research question:
 
-> To identify risk factors for developing obstructive sleep apnea (OSA) among adult IDD patients, so that we build a predictive model for predicting likelihood of OSA among new IDD patients
+> What are the risk factors for developing obstructive sleep apnea (OSA) among adult IDD patients? Can we build a predictive model for predicting likelihood of OSA among new IDD patients?
 
 We built two logistic regression models, with different set of predictors: 
 
