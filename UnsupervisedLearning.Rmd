@@ -1,0 +1,193 @@
+---
+title: "Introduction to Unsupervised Learning"
+author: "Xing Song"
+date: "11/11/2020"
+output: html_document
+---
+
+Let's do some preparation for the class by running the following chunk of codes
+
+```{r setup}
+#set up rmd 
+knitr::opts_chunk$set(message=F,
+                      warning=F,
+                      echo=T,
+                      fig.width=6,
+                      fig.height=4)
+
+#load packages
+pacman::p_load(tidyverse,
+               factoextra #for cluster, pca visualization
+               )
+```
+
+
+```{r}
+#load sample data
+idd_bmi<-readRDS("./idd_bmi_final.rda") 
+str(idd_bmi)
+
+#let's only take numerical variables
+idd_bmi_num<-idd_bmi %>%
+  select(AGE_AT_FIRSTDX,bmi_median,OSA_ind,
+         sex_f_ind,`amerian ind`,asian,black,other,`two races`,unknown,white)
+colnames(idd_bmi_num)<-gsub(" ","_",colnames(idd_bmi_num))
+```
+
+
+## K-Means Clustering 
+
+`kmeans` function parameters: 
+
+- `x`: numeric matrix, numeric data frame or a numeric vector
+- `centers`: Possible values are the number of clusters (k) or a set of initial (distinct) cluster centers. If a number, a random set of (distinct) rows in x is chosen as the initial centers.
+- `iter.max`: The maximum number of iterations allowed. Default value is 10.
+- `nstart`: The number of random starting partitions when centers is a number. Trying nstart > 1 is often recommended.
+
+```{r}
+#scale the data
+idd_bmi_scale<-scale(idd_bmi_num,center=T,scale=T) #z-score scaling
+
+#try two clusters
+set.seed(123)
+km2<-kmeans(x=idd_bmi_scale,
+            center=2,
+            iter.max = 15,
+            nstart = 10)
+
+#visualize
+fviz_cluster(km2, 
+             data = idd_bmi_scale,
+             palette = c("#2E9FDF", "#00AFBB"), 
+             geom = "point",
+             ellipse.type = "convex", 
+             ggtheme = theme_bw()
+             )
+```
+
+### Principal Component Analysis (PCA)
+
+The idea of PCA is simple — reduce the number of variables of a data set, while preserving as much information as possible
+
+- Each principal component is a linear combination of original variables.
+- PCA is useful for visualization, because it can plot high-dimensional data along first two directions of maximum variance.
+- Data should be centered and scaled to unit-variance
+
+```{r}
+# Dimension reduction using PCA
+pc <- prcomp(~ AGE_AT_FIRSTDX+bmi_median+OSA_ind+sex_f_ind+`amerian_ind`+asian+black+other+`two_races`+unknown+white, data = idd_bmi_num, scale = TRUE, center=TRUE)
+
+summary(pc)
+
+fviz_eig(pc)
+```
+
+
+```{r, fig.width=8,fig.height=6}
+fviz_pca_var(pc,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+
+```{r}
+# Coordinates of individuals
+ind.coord <- as.data.frame(get_pca_ind(pc)$coord)
+
+ggplot(ind.coord,aes(x=Dim.1,y=Dim.2))+
+  geom_point()
+```
+
+
+### Estimating the optimal number of clusters
+> One fundamental question is: How to choose the right number of expected clusters (k)?
+
+##### Elbow method
+Distance metric based on the `inertia` or `within sum of square`, which is a measure of average distance within a cluster. 
+
+```{r}
+fviz_nbclust(idd_bmi_scale, kmeans, method = "wss") +
+    geom_vline(xintercept = 4, linetype = 2)+
+  labs(subtitle = "Elbow method")
+```
+
+
+##### Silhouette method
+Distance metric based on the `silhouette value`, which is a measure of how similar an object is to its own cluster (cohesion) compared to other clusters (separation)
+
+```{r}
+fviz_nbclust(idd_bmi_scale, kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+```
+
+
+##### Gap statistic
+The `Gap statistic standardizes` the graph of log(wss), where wss is the within-cluster dispersion, by comparing it to its expectation under an appropriate null reference distribution of the data
+
+```{r}
+# nboot = 50 to keep the function speedy. 
+# recommended value: nboot= 500 for your analysis (may take more than 1hr).
+# Use verbose = FALSE to hide computing progression.
+
+set.seed(123)
+fviz_nbclust(idd_bmi_scale, kmeans, nstart = 10,  method = "gap_stat", nboot = 20)+
+  labs(subtitle = "Gap statistic method")
+```
+
+Remark: The disadvantage of elbow and average silhouette methods is that, they measure a global clustering characteristic only. A more sophisticated method is to use the gap statistic which provides a statistical procedure to formalize the elbow/silhouette heuristic in order to estimate the optimal number of clusters.
+
+```{r}
+# Add clusters obtained using the K-means algorithm
+ind.coord$cluster <- factor(km2$cluster)
+
+ggplot(ind.coord,aes(x=Dim.1,y=Dim.2))+
+  geom_point(aes(color=cluster))
+```
+
+
+## Hierarchical Agglomeration Clustering
+
+#### Similarity and Distance Metrics
+
+*Euclidean Distance*
+
+$$ Euclidean(p_1,p_2)=\sqrt((x_1-x_2)^2+(y_1-y_2)^2  $$
+
+```{r, fig.width=12,fig.height=8}
+hc_idd <- idd_bmi_num   %>%  # Get cars data
+          dist(method="euclidean")   %>%  # Compute distance/dissimilarity matrix
+          hclust      # Computer hierarchical clusters
+  
+plot(hc_idd)          # Plot dendrogram
+rect.hclust(hc_idd, k = 2, border = "red")
+rect.hclust(hc_idd, k = 3, border = "blue")
+```
+
+
+*Manhattan Distance*
+
+$$ Manhattan(p_1,p_2)=|x_1-x_2|+|y_1-y_2|  $$
+
+```{r, fig.width=12,fig.height=8}
+hc_idd <- idd_bmi_num   %>%  # Get cars data
+          dist(method="manhattan")   %>%  # Compute distance/dissimilarity matrix
+          hclust      # Computer hierarchical clusters
+  
+plot(hc_idd)          # Plot dendrogram
+rect.hclust(hc_idd, k = 2, border = "red")
+rect.hclust(hc_idd, k = 3, border = "blue")
+```
+
+
+Other more advanced methods: 
+
+- t-Distributed Stochastic Neighbor Embedding (t-SNE)
+- Mixture Models
+- Multidimensional Scaling (MDS)
+- Non-negative Matrix Factorization (NMF)
+- Auto-encoders (Deep Learning)
+
+
+
