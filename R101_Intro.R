@@ -1,4 +1,7 @@
-#### Basic Syntax ####
+##################################################################
+#Basic Syntax                             
+#This script is to introduce some basic syntax and grammar of R                  
+##################################################################
 
 #=====Variable Assignment=====
 x<-4
@@ -14,7 +17,7 @@ z<-x+y # will get error
 z<-paste(x,y)
 z
 
-#=====Variable Comparison, Logicals=====
+#=====Variable Comparison, Logical=====
 x==y
 x!=y
 x>y
@@ -115,10 +118,6 @@ is.matrix(df)
 
 df_row1<-df[1,]
 
-#---Tibble
-#TODO
-
-
 #print first two rows
 df[1:2,]
 df[c(1,3),]
@@ -155,47 +154,9 @@ list2
 list1_o1<-list1["o1"]
 
 
-#=====Data Import and Export=====
-#---load .csv file
-csv1<-read.csv("sample_csv_file.csv")
-
-#---save data as .csv file
-write.csv(csv1,file="save_as_csv.csv")
-
-#---save data as .rda(Rdata) file
-saveRDS(csv1,file="save_as_rda.rda")
 
 
-#=====R can send SQL to database and load data back into R=====
-#---You need to prepare things:
-# - 1. a database driver: JDBC driver is an API allowing interaction 
-#      between java applications (Rstudio is a java application) and database.
-#    - You should be able to see an "ojdbc6.jar" file under your home directory
 
-# - 2. a configuration file with your database/Oracle credentials
-config_file<-read.csv("config.csv",stringsAsFactors = F)
-  
-# - 3. RJDBC and DBI package
-pacman::p_load(DBI,RJDBC)
-# .rs.restartR() #--might need to run this line to restart R
-
-drv<-RJDBC::JDBC(driverClass="oracle.jdbc.OracleDriver",
-                 classPath="./ojdbc6.jar") #-- take the db driver from your home directory
-url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database) #--standard connection url
-conn <- RJDBC::dbConnect(drv=drv,
-                         url=url,
-                         user=config_file$username, 
-                         password=config_file$password)
-summary(conn)
-
-idd_pat<-dbGetQuery(conn,"select * from XSONG.PRVM_IDD_PATIENT_VIEW")
-
-
-#=====R can also speak like SQL=====
-p_load(sqldf)
-
-idd_ped<-sqldf("select * from idd_pat where age<18")
-idd_ped<-idd_pat[idd_pat$AGE<18,]
 
 
 

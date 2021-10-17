@@ -1,4 +1,11 @@
-##### Load Packages ########
+#######################################################################################
+#Load Packages                               
+#What makes R a very useful tool for analysis is that there is an active community of      
+#people who develop and share analytic-ready packages everyday.                          
+#The Comprehensive R Archive Network, or CRAN is a network of repositories where all      
+#validated packages are maintained           
+#######################################################################################
+
 # To install distributed packages in R using base packages, it usually takes two steps:
 # Step 1: install packages
 install.packages("pacman")
