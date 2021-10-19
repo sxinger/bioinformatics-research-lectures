@@ -2,26 +2,32 @@
 #Data Input/Output
 #Data Input/Import: You will need to read data from a variety of data storage locations 
 #into R environment/memory in order to perform analysis. 
+#======================================================================================
 #Data Output/Export: You will also need to write intermediate or final results back to 
 #permanant data storage locations
 #######################################################################################
 
 #====You may read data from local C: or D: drive====
-#--in .csv format
-csv1<-read.csv("sample_csv_file.csv")
-
 #--in .txt format
+dat_txt<-read.table(".txt")
+
+#--in .csv format
+dat_csv<-read.csv("sample_csv_file.csv")
 
 #--in .rda (r data) format
+dat_rda<-readRDS(".rda")
 
-#====You may need to read data directly from backend database====
+#====You may need to read data directly from the backend Snowflake database====
+# follow instructions in wiki page to configure ODBC connetor:
+# 
+# to connect to Snowflake de-id database. Note that you will need
+# a separate set of credentials to make the connection
+
+
 
 
 #=====R can send SQL to database and load data back into R=====
-#---You need to prepare things:
-# - 1. a database driver: JDBC driver is an API allowing interaction 
-#      between java applications (Rstudio is a java application) and database.
-#    - You should be able to see an "ojdbc6.jar" file under your home directory
+
 
 # - 2. a configuration file with your database/Oracle credentials
 config_file<-read.csv("config.csv",stringsAsFactors = F)
@@ -41,6 +47,10 @@ summary(conn)
 
 idd_pat<-dbGetQuery(conn,"select * from XSONG.PRVM_IDD_PATIENT_VIEW")
 
+
+#==== you may want to save intermediate results for further analysis or final results to export
+#---save data as .txt file
+write.table(csv1,file="save_as_csv.txt")
 
 #---save data as .csv file
 write.csv(csv1,file="save_as_csv.csv")
