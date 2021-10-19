@@ -19,11 +19,9 @@ dat_rda<-readRDS(".rda")
 
 #====You may need to read data directly from the backend Snowflake database====
 # follow instructions in wiki page to configure ODBC connetor:
-# 
+# https://github.com/sxinger/bioinformatics-research-lectures/wiki/ODBC_Connector
 # to connect to Snowflake de-id database. Note that you will need
 # a separate set of credentials to make the connection
-
-
 
 
 #=====R can send SQL to database and load data back into R=====
