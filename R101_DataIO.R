@@ -10,15 +10,16 @@ pacman::p_load(dplyr,magrittr,dbplyr)
 
 #=============================================================================
 # You may read data from local C: or D: drive
+# The raw data are often shared under D:/[study_name]/data folder
 #=============================================================================
 #--in .txt format
-dat_txt<-read.table("D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt")
+metadata<-read.table("D:/NextGenBMI-MUIRB2074022/data/metadata.txt")
 
 #--in .csv format
-dat_csv<-read.csv("D:/NextGenBMI-MUIRB2074022/data/aki_demo.csv")
+metadata<-read.csv("D:/NextGenBMI-MUIRB2074022/data/metadata.csv")
 
 #--in .rda (r data) format
-dat_rda<-readRDS("D:/NextGenBMI-MUIRB2074022/data/aki_demo.rda")
+aki_cohort<-readRDS("D:/NextGenBMI-MUIRB2074022/data/aki_cohort.rda")
 
 #=================================================================================
 # You can also read data directly from the backend Snowflake database
@@ -40,12 +41,12 @@ dat_rda<-readRDS("D:/NextGenBMI-MUIRB2074022/data/aki_demo.rda")
 # you may want to save intermediate results for further analysis
 #==============================================================================
 #---save data as .txt file
-write.table(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt")
+write.table(metadata,file="D:/NextGenBMI-MUIRB2074022/data/metadata.txt")
 
 #---save data as .csv file
-write.csv(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt",row.names = F)
+write.csv(metadata,file="D:/NextGenBMI-MUIRB2074022/data/metadata.txt",row.names = F)
 
 #---save data as .rda(Rdata) file
-saveRDS(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.rda")
+saveRDS(aki_cohort,file="D:/NextGenBMI-MUIRB2074022/data/aki_cohort.rda")
 
 

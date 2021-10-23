@@ -1,7 +1,7 @@
 ---
-title: "Data Preparation and Preprocessing (Chapter 11,12,13,14)"
+title: "Data Preparation and Preprocessing"
 author: "Xing Song"
-date: "10/01/2020"
+date: "10/22/2021"
 output: html_document
 ---
 

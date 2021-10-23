@@ -1,7 +1,7 @@
 ---
 title: "Introduction to R-markdown"
 author: "Xing Song"
-date: "10/6/2020"
+date: "10/6/2021"
 output: html_document
 ---
 
@@ -61,26 +61,6 @@ plot(cars)
 ### Embed Other Coding Languages
 A less well-known fact about R Markdown is that many other languages are also supported, such as Python, Julia, C++, and SQL. The support comes from the knitr package, which has provided a large number of language engines. 
 
-#### Embed SQL
-For example, you can embed SQL codes. The `sql` engine uses the `DBI` package to execute SQL queries, print their results, and optionally assign the results to a data frame. To use the `sql` engine, we will need to first establish a database connection:
-
-```{r}
-config_file<-read.csv("config.csv",stringsAsFactors = F)
-drv<-RJDBC::JDBC(driverClass="oracle.jdbc.OracleDriver",
-                 classPath="/u02/PRVM868/ojdbc6.jar")
-url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database)
-conn <- RJDBC::dbConnect(drv=drv,
-                         url=url, 
-                         user=config_file$username, 
-                         password=config_file$password)
-```
-
-And then use this connection `conn` within following sql chunks via the `connection` option: 
-
-```{sql, connection=conn, output.var="IDD_PT"}
-select * from XSONG.PRVM_IDD_PATIENT_VIEW
-```
-
 #### Embed Python
 You can embed `python` codes, but will need to install the interfacing package [reticulate](https://rstudio.github.io/reticulate/) first,
 
@@ -92,6 +72,9 @@ pacman::p_load(reticulate)
 x = 'hello, python world!'
 print(x.split(' '))
 ```
+
+You can embed many other languages, read for more details: https://bookdown.org/yihui/rmarkdown/language-engines.html. 
+
 
 *****************************
 

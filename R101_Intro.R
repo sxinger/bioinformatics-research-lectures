@@ -154,8 +154,10 @@ list2
 list1_o1<-list1["o1"]
 
 
-
-
+#=====R Comments======
+# Use # signs to comment. Anything to the right of a # is ignored by R, meaning it won't be executed. 
+# Comments are a great way to describe what your code does within the code itself, 
+# so comment liberally in your R scripts.
 
 
 
