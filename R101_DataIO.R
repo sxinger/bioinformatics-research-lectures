@@ -4,54 +4,48 @@
 #into R environment/memory in order to perform analysis. 
 #======================================================================================
 #Data Output/Export: You will also need to write intermediate or final results back to 
-#permanant data storage locations
+#permanent data storage locations
 #######################################################################################
+pacman::p_load(dplyr,magrittr,dbplyr)
 
-#====You may read data from local C: or D: drive====
+#=============================================================================
+# You may read data from local C: or D: drive
+#=============================================================================
 #--in .txt format
-dat_txt<-read.table(".txt")
+dat_txt<-read.table("D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt")
 
 #--in .csv format
-dat_csv<-read.csv("sample_csv_file.csv")
+dat_csv<-read.csv("D:/NextGenBMI-MUIRB2074022/data/aki_demo.csv")
 
 #--in .rda (r data) format
-dat_rda<-readRDS(".rda")
+dat_rda<-readRDS("D:/NextGenBMI-MUIRB2074022/data/aki_demo.rda")
 
-#====You may need to read data directly from the backend Snowflake database====
+#=================================================================================
+# You can also read data directly from the backend Snowflake database
 # follow instructions in wiki page to configure ODBC connetor:
 # https://github.com/sxinger/bioinformatics-research-lectures/wiki/ODBC_Connector
-# to connect to Snowflake de-id database. Note that you will need
-# a separate set of credentials to make the connection
+# to connect to Snowflake de-id database. 
+# !! Note that you will need a separate set of credentials to make the connection
+#==============================================================================
+# pacman::p_load(odbc,DBI)
+# myconn <- DBI::dbConnect(drv=odbc::odbc(),
+#                          dsn=Sys.getenv("DSN"),
+#                          uid=Sys.getenv("Snowflake_Username"),
+#                          pwd=Sys.getenv("Snowflake_Password"),)
+# 
+# #--retrieve data using the connection, e.g.,
+# aki_demo<-tbl(myconn,in_schema("AKI_SEQUELAE","COV_DEMO")) %>% collect
 
-
-#=====R can send SQL to database and load data back into R=====
-
-
-# - 2. a configuration file with your database/Oracle credentials
-config_file<-read.csv("config.csv",stringsAsFactors = F)
-
-# - 3. RJDBC and DBI package
-pacman::p_load(DBI,RJDBC)
-# .rs.restartR() #--might need to run this line to restart R
-
-drv<-RJDBC::JDBC(driverClass="oracle.jdbc.OracleDriver",
-                 classPath="./ojdbc6.jar") #-- take the db driver from your home directory
-url<-paste0("jdbc:oracle:thin:@localhost:1521:",config_file$database) #--standard connection url
-conn <- RJDBC::dbConnect(drv=drv,
-                         url=url,
-                         user=config_file$username, 
-                         password=config_file$password)
-summary(conn)
-
-idd_pat<-dbGetQuery(conn,"select * from XSONG.PRVM_IDD_PATIENT_VIEW")
-
-
-#==== you may want to save intermediate results for further analysis or final results to export
+#==============================================================================
+# you may want to save intermediate results for further analysis
+#==============================================================================
 #---save data as .txt file
-write.table(csv1,file="save_as_csv.txt")
+write.table(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt")
 
 #---save data as .csv file
-write.csv(csv1,file="save_as_csv.csv")
+write.csv(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.txt",row.names = F)
 
 #---save data as .rda(Rdata) file
-saveRDS(csv1,file="save_as_rda.rda")
+saveRDS(aki_demo,file="D:/NextGenBMI-MUIRB2074022/data/aki_demo.rda")
+
+
