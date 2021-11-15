@@ -1,6 +1,6 @@
 rm(list=ls())
 
-pacman:p_load(tidyverse,tidyr,broom)
+pacman::p_load(tidyverse,tidyr,broom)
 
 #load pre-processed data
 # dat<-readRDS("D:/NextGenBMI-MUIRB2073764/data/bmi_data.rda")
