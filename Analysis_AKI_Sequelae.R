@@ -5,6 +5,7 @@ pacman::p_load(tidyverse,tidyr,gmodels,lubridate)
 #load pre-processed data
 dat<-readRDS("D:/NextGenBMI-MUIRB2074022/data/aki_data.rda") %>%
   filter(!is.na(SEX)) %>%
+  filter(is.na(AKI3_ONSET) & DS_EX_IND ==0) %>%
   mutate(AGE_AT_1stAKI = year(AKI1_ONSET) - year(BIRTH_DATE)) %>%
   as.data.frame
 
@@ -40,7 +41,7 @@ prev_rt_mort<-dat %>%
 ##==============================================
 #once confirmed that you don't have any duplicates
 table(dat$SEX,dat$DEATH_IND,dnn=list("sex","death_ind"))
-prop.table(table(dat$SEX,dat$DEATH_IND,dnn=list("sex","death_ind")))
+prop.table(table(dat$SEX,dat$DEATH_IND,dnn=list("sex","death_ind")),margin=2)
 
 ##==================================================
 # Or you can use "group_by" and "summarize" function 
@@ -86,6 +87,19 @@ logreg_mort_sex<-glm(DEATH_IND ~ SEX_F_IND,
                      family="binomial")
 
 summary(logreg_mort_sex)
+
+coef_sexf<-coef(logreg_mort_sex)[2]
+odds<-exp(coef(logreg_mort_sex)[2])
+odds
+
+
+logreg_mort_ds<-glm(DEATH_IND ~ DISCHARGE_STATUS,
+                    data = dat,
+                    family="binomial")
+
+coef_dssh<-coef(logreg_mort_ds)["DISCHARGE_STATUSSH"]
+odds<-exp(coef_dssh)
+odds
 
 
 ######################################
